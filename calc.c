@@ -1,9 +1,29 @@
 #include "calc.h"
 
 #include <stdio.h>
-#include <stdlib.h>
 
-void run_repl() { TODO("implement REPL"); }
+#define MAX_INPUT 1024
+
+// FIXME: Crashes program for non valid expressions
+void run_repl() {
+  char input[MAX_INPUT];
+  printf("You know how to quit a REPL, it's not vim.\n");
+
+  Calculator calc = {};
+  while (1) {
+    printf("> ");
+
+    if (fgets(input, sizeof(input), stdin) == NULL) {
+      break;
+    }
+
+    if (strlen(input) != 0) {
+      calc_init(&calc, input);
+      double result = evaluate(&calc);
+	  printf("= %f\n", result);
+    }
+  }
+}
 
 int main(int argc, char *argv[]) {
   if (argc < 2) {
@@ -13,7 +33,7 @@ int main(int argc, char *argv[]) {
     for (int i = 1; i < argc; ++i) {
       calc_init(&calc, argv[i]);
       double result = evaluate(&calc);
-      printf("%f", result);
+      printf("%f\n", result);
     }
   }
   return 0;
@@ -22,7 +42,7 @@ int main(int argc, char *argv[]) {
 // Parsing specific functions
 static double evaluate(Calculator *calc) { return additive(calc); }
 
-// TODO: check for whitespace  edge cases
+// TODO: check for whitespace edge cases
 static double additive(Calculator *calc) {
   double lhs = multiplicative(calc);
   skip_whitespace(calc);
