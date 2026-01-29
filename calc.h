@@ -1,8 +1,10 @@
 #ifndef CALC_H
 #define CALC_H
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #define TODO(msg)                                                              \
   do {                                                                         \
@@ -22,6 +24,8 @@ typedef struct {
   char *src;
   size_t pos;
   size_t length;
+  bool invalid;
+  const char *error_message;
 } Calculator;
 
 static void calc_init(Calculator *calc, char *src);
@@ -37,4 +41,8 @@ static double unary(Calculator *calc);
 static double multiplicative(Calculator *calc);
 static double additive(Calculator *calc);
 static double evaluate(Calculator *calc);
+
+static double parse_expression_statement(Calculator *calc);
+
+static void invalidate_parser(Calculator *calc, const char *msg);
 #endif

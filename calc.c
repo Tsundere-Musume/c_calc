@@ -1,26 +1,28 @@
 #include "calc.h"
 
-#include <stdio.h>
-
 #define MAX_INPUT 1024
 
-// FIXME: Crashes program for non valid expressions
 void run_repl() {
   char input[MAX_INPUT];
   printf("You know how to quit a REPL, it's not vim.\n");
 
   Calculator calc = {};
-  while (1) {
+  while (true) {
     printf("> ");
 
     if (fgets(input, sizeof(input), stdin) == NULL) {
       break;
     }
 
-    if (strlen(input) != 0) {
+    size_t length = strcspn(input, "\n");
+    if (length != 0) {
       calc_init(&calc, input);
       double result = evaluate(&calc);
-	  printf("= %f\n", result);
+      if (calc.invalid) {
+        printf("%s\n", calc.error_message);
+      } else {
+        printf("= %f\n", result);
+      }
     }
   }
 }
@@ -40,7 +42,9 @@ int main(int argc, char *argv[]) {
 }
 
 // Parsing specific functions
-static double evaluate(Calculator *calc) { return additive(calc); }
+static double evaluate(Calculator *calc) { 
+	return parse_expression_statement(calc);
+}
 
 // TODO: check for whitespace edge cases
 static double additive(Calculator *calc) {
@@ -131,10 +135,11 @@ static char advance(Calculator *calc) {
 
 // If the next character in the parser matches the argument then the parser
 // state is moved forward.
-// Otherwise, causes a panic
+// Otherwise, invalidates the parser
 static void expect(Calculator *calc, char c) {
   if (peek(calc) != c) {
-    PANIC("Expected %c, got %c", c, peek(calc));
+    // sprintf(calc->error_message, "Expected %c, got %c", c, peek(calc));
+    invalidate_parser(calc, "Didn't get the expected token");
   }
   advance(calc);
 }
@@ -144,6 +149,8 @@ static void calc_init(Calculator *calc, char *src) {
   calc->pos = 0;
   calc->src = src;
   calc->length = strlen(src);
+  calc->invalid = false;
+  calc->error_message = NULL;
 }
 
 // Parses a string as a floating point number.
@@ -156,9 +163,26 @@ static double evaluate_number(Calculator *calc) {
   double result = strtod(start, &end);
 
   if (start == end) {
-    PANIC("Expected a number");
+    invalidate_parser(calc, "Expected a number.");
   }
 
   calc->pos += (end - start);
   return result;
 }
+
+static void invalidate_parser(Calculator *calc, const char *msg) {
+  calc->invalid = true;
+  calc->error_message = msg;
+}
+
+static double parse_expression_statement(Calculator *calc) {
+	double result = additive(calc);
+
+	char c = peek(calc);
+	if (c != '\n' && c != '\0') {
+		invalidate_parser(calc, "invalid expression");
+		return 0;
+	}
+	return result;
+}
+
